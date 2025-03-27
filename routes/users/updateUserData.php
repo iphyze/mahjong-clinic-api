@@ -9,6 +9,8 @@ require_once 'includes/authMiddleware.php';
 
 header("Content-Type: application/json");
 
+$userData = authenticateUser();  // This will stop execution if unauthorized
+
 
 if ($_SERVER['REQUEST_METHOD'] !== 'PUT') {
     http_response_code(400);
@@ -45,6 +47,15 @@ $lastName = $input['lastName'] ?? null;
 $email = $input['email'] ?? null;
 $country_code = $input['country_code'] ?? null;
 $number = $input['number'] ?? null;
+
+
+
+
+if(!$id){
+    http_response_code(400);
+    echo json_encode(["message" => "User's ID is required"]);
+    exit;
+}
 
 // Validate ID
 if (!v::intVal()->validate($id)) {

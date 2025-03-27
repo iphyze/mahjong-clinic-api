@@ -36,6 +36,8 @@ $routes = [
     '/users/getAllUsers' => 'routes/users/getAllUsers.php',
     '/users/deleteUsers' => 'routes/users/deleteUsers.php',
     '/users/updateUserData' => 'routes/users/updateUserData.php',
+    '/users/updatePassword' => 'routes/users/updatePassword.php',
+    '/notifications/sendNotification' => 'routes/notifications/sendNotification.php',
 ];
 
 
@@ -65,7 +67,7 @@ foreach ($dynamicRoutes as $pattern => $file) {
 }
 
 http_response_code(404);
-echo json_encode(["message" => "Page not found."]);
+echo json_encode(["message" => "Page not found!"]);
 exit;
 
 // Close connection

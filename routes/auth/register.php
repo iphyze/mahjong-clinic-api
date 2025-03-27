@@ -184,14 +184,6 @@ function sendVerificationEmail($to, $emailCode, $expiresAt, $firstName) {
         // $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
         $mail->SMTPSecure = 'ssl';
         $mail->Port = $_ENV['SMTP_PORT'];
-        // $mail->SMTPOptions = array(
-        //     'ssl' => array(
-        //         'verify_peer' => false,
-        //         'verify_peer_name' => false,
-        //         'allow_self_signed' => true
-        //     )
-        // );
-        
         $mail->setFrom($_ENV['SMTP_USER'], 'Mahjong Nigeria Clinic');
         $mail->addAddress($to);
         $mail->isHTML(true);
