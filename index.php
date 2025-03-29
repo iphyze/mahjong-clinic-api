@@ -4,7 +4,7 @@ require_once __DIR__ . '/vendor/autoload.php';
 
 // Set CORS headers
 header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
+header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, PATCH, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Access-Control-Max-Age: 86400");
 header("Content-Type: application/json");
@@ -36,8 +36,20 @@ $routes = [
     '/users/getAllUsers' => 'routes/users/getAllUsers.php',
     '/users/deleteUsers' => 'routes/users/deleteUsers.php',
     '/users/updateUserData' => 'routes/users/updateUserData.php',
+    '/users/updateUser' => 'routes/users/updateUser.php',
     '/users/updatePassword' => 'routes/users/updatePassword.php',
     '/notifications/sendNotification' => 'routes/notifications/sendNotification.php',
+    '/notifications/notificationStatus' => 'routes/notifications/updateNotificationStatus.php',
+    '/notifications/updatePushToken' => 'routes/notifications/updatePushToken.php',
+    '/payment/createPayment' => 'routes/payments/createPayment.php',
+    '/payment/getAllPayments' => 'routes/payments/getAllPayments.php',
+    '/game/createGame' => 'routes/games/createGame.php',
+    '/game/addUserToGame' => 'routes/games/addUserToGame.php',
+    '/game/getAllGamesWithPlayers' => 'routes/games/getAllGamesWithPlayers.php',
+    '/game/getAllGames' => 'routes/games/getAllGames.php',
+    '/game/updateGame' => 'routes/games/updateGame.php',
+    '/game/getAllPairs' => 'routes/games/getAllPairs.php',
+    '/game/deletePairs' => 'routes/games/deletePairs.php',
 ];
 
 
@@ -52,6 +64,10 @@ if (array_key_exists($relativePath, $routes)) {
 
 $dynamicRoutes = [
     '/users/getSingleUser/(.+)' => 'routes/users/getSingleUser.php',
+    '/notifications/getNotifications/(.+)' => 'routes/notifications/getNotifications.php',
+    '/payment/getSinglePayment/(.+)' => 'routes/payments/getSinglePayment.php',
+    '/game/getUserPairing/(.+)' => 'routes/games/getUserPairing.php',
+    '/game/deleteGame/(.+)' => 'routes/games/deleteGame.php',
 ];
 
 

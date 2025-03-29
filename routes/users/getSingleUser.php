@@ -56,7 +56,7 @@ if ($result->num_rows === 0) {
     exit;
 }
 
-$user = $result->fetch_assoc();
+$user = $result->fetch_all(MYSQLI_ASSOC);
 
 // Format the response in the required pattern
 $formattedUser = [

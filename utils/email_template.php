@@ -502,3 +502,155 @@ function passwordUpdateTemplate($firstName) {
 }
 
 
+
+function paymentConfirmationTemplate($dollar_amount, $rate, $amount, $payment_type, $paymentStatus, $paymentDuration, $paymentDate, $phoneNumber, $transactionId, $fullname) {
+    $statusColor = ($paymentStatus === 'Pending') ? '#856404' : (($paymentStatus === 'successful') ? '#155724' : '#721c24');
+    $bgColor = ($paymentStatus === 'Pending') ? '#fff3cd' : (($paymentStatus === 'successful') ? '#d4edda' : '#f8d7da');
+    $borderColor = $statusColor;
+
+    return '
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Payment Confirmation</title>
+        <style>
+            body {
+                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+                line-height: 1.6;
+                background-color: #fffcfd;
+                max-width: 600px;
+                margin: 0 auto;
+                padding: 40px 20px;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+            }
+            .mail-container {
+                width: 28rem;
+                background-color: white;
+                box-shadow: 0 0px 10px rgba(0, 0, 0, 0.02);
+                padding: 50px 20px;
+                text-align: center;
+            }
+            .logo-img {
+                width: 180px;
+                margin: 20px auto;
+                display: block;
+            }
+            .hi-user {
+                font-size: 20px;
+                color: #621d1f;
+                font-weight: 700;
+            }
+            .hi-user-subtext {
+                font-size: 20px;
+                margin-bottom: 20px;
+                color: #621d1f;
+            }
+            .welcome-img {
+                width: 150px;
+                margin: 10px auto;
+                display: block;
+            }
+            .code-text {
+                font-size: 16px;
+                color: rgb(86, 86, 86);
+            }
+            .code-number {
+                width: 50%;
+                margin: 20px auto;
+                text-align: center;
+                padding: 10px;
+                border-radius: 3px;
+                font-size: 28px;
+                font-weight: 600;
+                background-color: ' . $bgColor . ';
+                color: ' . $statusColor . ';
+                border: 1px solid ' . $borderColor . ';
+            }
+            .list-box {
+                padding: 20px;
+                background-color: #ffffff;
+                border-radius: 5px;
+            }
+            .list-flexbox {
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 15px;
+            }
+            .list-icon {
+                font-size: 14px;
+                color: #ac1d21;
+                text-align: left;
+            }
+            .list-text {
+                font-size: 14px;
+                color: #621d1f;
+            }
+            .footer {
+                text-align: center;
+                background-color: #621d1f;
+                padding: 20px;
+                color: white;
+            }
+        </style>
+    </head>
+    <body>
+        <img src="https://mahjon-db.goldenrootscollectionsltd.com/images/email-image.png" alt="img" class="welcome-img">
+        
+        <div class="hi-user">Hello ' . htmlspecialchars($fullname) . ',</div>
+        <div class="hi-user-subtext">Payment Notice</div>
+        
+        <div class="mail-container">
+            <img src="https://mahjon-db.goldenrootscollectionsltd.com/images/splash-logo.png" alt="logo-img" class="logo-img"/>
+            <div class="code-text">
+                Your payment has been processed successfully, please see below your transaction details:
+            </div>
+            <div class="code-number">' . htmlspecialchars($paymentStatus) . '</div>
+            <div class="list-box">
+                <div class="list-flexbox">
+                    <div class="list-icon">Amount (USD): </div>
+                    <div class="list-text">:$' . number_format($dollar_amount, 2) . '</div>
+                </div>
+                <div class="list-flexbox">
+                    <div class="list-icon">Rate: </div>
+                    <div class="list-text">₦' . number_format($rate, 2) . '</div>
+                </div>
+                <div class="list-flexbox">
+                    <div class="list-icon">Amount (NGN): </div>
+                    <div class="list-text">₦' . number_format($amount, 2) . '</div>
+                </div>
+                <div class="list-flexbox">
+                    <div class="list-icon">Payment Date: </div>
+                    <div class="list-text">' . date("F j, Y, g:i a", strtotime($paymentDate)) . '</div>
+                </div>
+                <div class="list-flexbox">
+                    <div class="list-icon">Payment Type: </div>
+                    <div class="list-text">' . htmlspecialchars($payment_type) . '</div>
+                </div>
+                <div class="list-flexbox">
+                    <div class="list-icon">Payment Duration: </div>
+                    <div class="list-text">' . htmlspecialchars($paymentDuration) . '</div>
+                </div>
+                <div class="list-flexbox">
+                    <div class="list-icon">Phone Number: </div>
+                    <div class="list-text">' . htmlspecialchars($phoneNumber) . '</div>
+                </div>
+                <div class="list-flexbox">
+                    <div class="list-icon">Transaction ID: </div>
+                    <div class="list-text">' . htmlspecialchars($transactionId) . '</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>This is an automated message, please do not reply directly to this email.</p>
+            <p>© 2025 Mahjong Clinic Nigeria. All rights reserved.</p>
+            <p>Developer | iphysdynamix</p>
+        </div>
+    </body>
+    </html>';
+}

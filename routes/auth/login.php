@@ -1,123 +1,137 @@
 <?php
 
 require 'vendor/autoload.php';
-
+require_once 'includes/connection.php';
 use Firebase\JWT\JWT;
-use Firebase\JWT\Key;
 use Respect\Validation\Validator as v;
 use Dotenv\Dotenv;
-require_once 'includes/connection.php';
 
-// Load environment variables
-$dotenv = Dotenv::createImmutable('./');
-$dotenv->load();
 
-// Ensure the request method is POST
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    http_response_code(400);
-    echo json_encode(["message" => "Bad Request: Only POST method is allowed"]);
-    exit;
-}
+header('Content-Type: application/json');
 
-// Get the JSON input
-$data = json_decode(file_get_contents("php://input"));
+try {
+    // Load environment variables
+    $dotenv = Dotenv::createImmutable('./');
+    $dotenv->load();
 
-if (!isset($data->email) || !isset($data->password)) {
-    http_response_code(400);
-    echo json_encode(["message" => "Email and password are required"]);
-    exit;
-}
+    // Ensure the request method is POST
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        throw new Exception("Bad Request: Only POST method is allowed", 400);
+    }
 
-$email = trim($data->email);
-$password = trim($data->password);
+    // Get the JSON input
+    $data = json_decode(file_get_contents("php://input"));
 
-// Define validators
-$emailValidator = v::email()->notEmpty();
-$passwordValidator = v::stringType()->length(6, null);
+    if (!isset($data->email) || !isset($data->password)) {
+        throw new Exception("Email and password are required", 400);
+    }
 
-// Validate email
-if (!$emailValidator->validate($email)) {
-    http_response_code(400);
-    echo json_encode(["message" => "Invalid email format"]);
-    exit;
-}
+    $email = trim($data->email);
+    $password = trim($data->password);
 
-// Validate password
-if (!$passwordValidator->validate($password)) {
-    http_response_code(400);
-    echo json_encode(["message" => "Password must be at least 6 characters long"]);
-    exit;
-}
+    // Define validators
+    $emailValidator = v::email()->notEmpty();
+    $passwordValidator = v::stringType()->length(6, null);
 
-$email = mysqli_real_escape_string($conn, $email);
+    // Validate email
+    if (!$emailValidator->validate($email)) {
+        throw new Exception("Invalid email format", 400);
+    }
 
-$sql = "SELECT * FROM users WHERE email = ?";
-$stmt = $conn->prepare($sql);
-$stmt->bind_param("s", $email);
-$stmt->execute();
-$result = $stmt->get_result();
+    // Validate password
+    if (!$passwordValidator->validate($password)) {
+        throw new Exception("Password must be at least 6 characters long", 400);
+    }
 
-if ($result->num_rows === 0) {
-    http_response_code(401);
-    echo json_encode(["message" => "Invalid email or password"]);
-    exit;
-}
+    // Secure email input
+    $email = mysqli_real_escape_string($conn, $email);
 
-$user = $result->fetch_assoc();
+    // Query database
+    $sql = "SELECT * FROM users WHERE email = ?";
+    $stmt = $conn->prepare($sql);
+    
+    if (!$stmt) {
+        throw new Exception("Database query preparation failed: " . $conn->error, 500);
+    }
 
-// Verify password
-if (!password_verify($password, $user['password'])) {
-    http_response_code(401);
-    echo json_encode(["message" => "Invalid email or password"]);
-    exit;
-}
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+    $result = $stmt->get_result();
 
-// Generate JWT
-$secretKey = $_ENV["JWT_SECRET"] ?: "your_default_secret";
-$tokenPayload = [
-    "id" => $user['id'],
-    "email" => $user['email'],
-    "role" => $user['role'],
-    "exp" => time() + ($_ENV["JWT_EXPIRES_IN"] ?: 5 * 24 * 60 * 60) // 5 days expiration
-];
-$token = JWT::encode($tokenPayload, $secretKey, 'HS256');
+    if (!$result) {
+        throw new Exception("Database execution error: " . $stmt->error, 500);
+    }
 
-// Response
-echo json_encode([
-    "message" => "Login successful",
-    "data" => [
+    if ($result->num_rows === 0) {
+        throw new Exception("Invalid email or password", 401);
+    }
+
+    $user = $result->fetch_assoc();
+
+    // Verify password
+    if (!password_verify($password, $user['password'])) {
+        throw new Exception("Invalid email or password", 401);
+    }
+
+    // Generate JWT
+    $secretKey = $_ENV["JWT_SECRET"] ?: "your_default_secret";
+    $tokenPayload = [
         "id" => $user['id'],
-        "firstName" => $user['firstName'],
-        "lastName" => $user['lastName'],
         "email" => $user['email'],
-        "userName" => $user['userName'],
-        "image" => $user['image'],
-        "skillLevel" => $user['skillLevel'],
         "role" => $user['role'],
-        "isEmailVerified" => $user['isEmailVerified'] == 1,
-        "payments" => [
-            "membership" => [
-                "membershipPayment" => $user['membershipPayment'],
-                "membershipPaymentAmount" => $user['membershipPaymentAmount'],
-                "membershipPaymentDate" => $user['membershipPaymentDate'],
-                "membershipPaymentDuration" => $user['membershipPaymentDuration'],
+        "exp" => time() + ($_ENV["JWT_EXPIRES_IN"] ?: 5 * 24 * 60 * 60) // 5 days expiration
+    ];
+    $token = JWT::encode($tokenPayload, $secretKey, 'HS256');
+
+
+    http_response_code(200);
+    echo json_encode([
+        "status" => "Success",
+        "message" => "Login successful",
+        "data" => [
+            "id" => $user['id'],
+            "firstName" => $user['firstName'],
+            "lastName" => $user['lastName'],
+            "email" => $user['email'],
+            "userName" => $user['userName'],
+            "image" => $user['image'],
+            "skillLevel" => $user['skillLevel'],
+            "role" => $user['role'],
+            "isEmailVerified" => $user['isEmailVerified'] == 1,
+            "payments" => [
+                "membership" => [
+                    "membershipPayment" => $user['membershipPayment'],
+                    "membershipPaymentAmount" => $user['membershipPaymentAmount'],
+                    "membershipPaymentDate" => $user['membershipPaymentDate'],
+                    "membershipPaymentDuration" => $user['membershipPaymentDuration'],
+                ],
+                "tutorship" => [
+                    "tutorshipPayment" => $user['tutorshipPayment'],
+                    "tutorshipPaymentAmount" => $user['tutorshipPaymentAmount'],
+                    "tutorshipPaymentDate" => $user['tutorshipPaymentDate'],
+                    "tutorshipPaymentDuration" => $user['tutorshipPaymentDuration'],
+                ]
             ],
-            "tutorship" => [
-                "tutorshipPayment" => $user['tutorshipPayment'],
-                "tutorshipPaymentAmount" => $user['tutorshipPaymentAmount'],
-                "tutorshipPaymentDate" => $user['tutorshipPaymentDate'],
-                "tutorshipPaymentDuration" => $user['tutorshipPaymentDuration'],
-            ]
-        ],
-        "emailVerification" => [
-            "emailCode" => $user['emailCode'],
-            "expiresAt" => $user['expiresAt']
-        ],
-        "token" => $token,
-        "country_code" => $user['country_code'],
-        "number" => $user['number'],
-        "createdAt" => $user['createdAt'],
-        "updatedBy" => $user['updatedBy'],
-    ]
-]);
-exit;
+            "emailVerification" => [
+                "emailCode" => $user['emailCode'],
+                "expiresAt" => $user['expiresAt']
+            ],
+            "token" => $token,
+            "country_code" => $user['country_code'],
+            "number" => $user['number'],
+            "createdAt" => $user['createdAt'],
+            "updatedBy" => $user['updatedBy'],
+        ]
+    ]);
+
+} catch (Exception $e) {
+    // Handle errors properly
+    http_response_code($e->getCode() ?: 500);
+    echo json_encode([
+        "status" => "Failed",
+        "message" => $e->getMessage()
+    ]);
+}
+
+
+?>
