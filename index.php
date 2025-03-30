@@ -23,11 +23,36 @@ $basePath = '/mahjong-server/api';
 $relativePath = str_replace($basePath, '', $requestUri);
 
 
+
+$uploadPath = '/utils/imageUploads/mahjong-uploads/';
+
+// Check if the request is for an uploaded image
+if (strpos($relativePath, '/utils/imageUploads/mahjong-uploads/') === 0) {
+    // Extract the file name from the request
+    $filename = basename($relativePath);
+    $filePath = $uploadPath . $filename;
+
+    // Check if the file exists
+    if (file_exists($filePath)) {
+        // Determine MIME type
+        $mimeType = mime_content_type($filePath);
+        header("Content-Type: $mimeType");
+        readfile($filePath); // Output the image
+        exit;
+    } else {
+        http_response_code(404);
+        echo json_encode(["message" => "Image not found!"]);
+        exit;
+    }
+}
+
+
 $routes = [
     '/' => function () {
         echo json_encode(["message" => "Welcome to Mahjong API 😊"]);
     },
     '/welcome' => 'routes/welcome.php',
+    '/utils/imageUploads/mahjong-uploads/' => 'routes/games/deletePairs.php',
     '/auth/login' => 'routes/auth/login.php',
     '/auth/register' => 'routes/auth/register.php',
     '/auth/sendVerificationCode' => 'routes/auth/sendVerificationCode.php',
