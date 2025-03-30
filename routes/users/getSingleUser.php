@@ -14,12 +14,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 }
 
 
-// Ensure params exist
-if (!isset($_GET['params'])) {
-    http_response_code(400);
-    echo json_encode(["message" => "Missing user ID in request"]);
-    exit;
-}
+// // Ensure params exist
+// if (!isset($_GET['params'])) {
+//     http_response_code(400);
+//     echo json_encode(["message" => "Missing user ID in request"]);
+//     exit;
+// }
 
 // Ensure 'params' is a valid numeric ID
 $userId = $_GET['params'];
@@ -56,7 +56,7 @@ if ($result->num_rows === 0) {
     exit;
 }
 
-$user = $result->fetch_all(MYSQLI_ASSOC);
+$user = $result->fetch_assoc();
 
 // Format the response in the required pattern
 $formattedUser = [
