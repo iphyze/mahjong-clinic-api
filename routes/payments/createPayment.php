@@ -67,6 +67,75 @@ if ($loggedInUserRole !== "Admin" && trim($data['userId']) !== $loggedInUserId) 
 }
 
 
+// function createPayment($conn, $data) {
+//     $errors = validatePaymentData($data);
+//     if (!empty($errors)) {
+//         return jsonResponse(400, ['errors' => $errors]);
+//     }
+
+//     try {
+//         extract($data);
+//         $sanitizedEmail = strtolower(trim($email));
+//         $paymentDate = date("Y-m-d H:i:s");
+//         $createdBy = $sanitizedEmail;
+//         $updatedBy = $sanitizedEmail;
+
+//         // Check if user exists and get their push token
+//         $stmt = $conn->prepare("SELECT id, expoPushToken FROM users WHERE id = ? AND email = ?");
+//         $stmt->bind_param("is", $userId, $sanitizedEmail);
+//         $stmt->execute();
+//         $userResult = $stmt->get_result();
+
+//         if ($userResult->num_rows === 0) {
+//             return jsonResponse(400, ['message' => 'User not found']);
+//         }
+
+//         $user = $userResult->fetch_assoc();
+//         $expoPushToken = $user['expoPushToken'];
+
+//         // Insert payment details
+//         $stmt = $conn->prepare("
+//             INSERT INTO user_payment (userId, email, dollar_amount, rate, amount, payment_type, paymentStatus, 
+//             paymentDuration, paymentDate, phoneNumber, transactionId, fullname, createdBy, updatedBy, 
+//             paymentMethod, transactionReference, currency)
+//             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+//         ");
+//         $stmt->bind_param("issddssssssssssss", $userId, $sanitizedEmail, $dollar_amount, $rate, $amount, 
+//                           $payment_type, $paymentStatus, $paymentDuration, $paymentDate, $phoneNumber, 
+//                           $transactionId, $fullname, $createdBy, $updatedBy, $paymentMethod, $transactionReference, $currency);
+
+//         if (!$stmt->execute()) {
+//             return jsonResponse(500, ['message' => 'Error creating payment', 'error' => $stmt->error]);
+//         }
+
+//         $paymentId = $stmt->insert_id;
+
+//         // Update user membership/tutorship details if needed
+//         if ($payment_type === 'Membership Payment') {
+//             $updateUserQuery = "UPDATE users SET membershipPayment = ?, membershipPaymentAmount = ?, 
+//                                 membershipPaymentDate = ?, membershipPaymentDuration = ? WHERE id = ?";
+//         } elseif ($payment_type === 'Tutorship Payment') {
+//             $updateUserQuery = "UPDATE users SET tutorshipPayment = ?, tutorshipPaymentAmount = ?, 
+//                                 tutorshipPaymentDate = ?, tutorshipPaymentDuration = ? WHERE id = ?";
+//         } else {
+//             return processPaymentCompletion($conn, $data, $paymentId, $expoPushToken, $paymentDate);
+//         }
+
+//         $stmt = $conn->prepare($updateUserQuery);
+//         $stmt->bind_param("ssssi", $paymentStatus, $amount, $paymentDate, $paymentDuration, $userId);
+
+//         if (!$stmt->execute()) {
+//             return jsonResponse(500, ['message' => 'Error updating user details', 'error' => $stmt->error]);
+//         }
+
+//         return processPaymentCompletion($conn, $data, $paymentId, $expoPushToken, $paymentDate);
+
+//     } catch (Exception $e) {
+//         return jsonResponse(500, ['message' => 'Server error', 'error' => $e->getMessage()]);
+//     }
+// }
+
+
 function createPayment($conn, $data) {
     $errors = validatePaymentData($data);
     if (!empty($errors)) {
@@ -82,58 +151,31 @@ function createPayment($conn, $data) {
 
         // Check if user exists and get their push token
         $stmt = $conn->prepare("SELECT id, expoPushToken FROM users WHERE id = ? AND email = ?");
-        $stmt->bind_param("is", $userId, $sanitizedEmail);
-        $stmt->execute();
-        $userResult = $stmt->get_result();
+        if (!$stmt) {
+            error_log("SQL Prepare Error: " . $conn->error);
+            return jsonResponse(500, ['message' => 'Database error preparing statement']);
+        }
 
+        $stmt->bind_param("is", $userId, $sanitizedEmail);
+        if (!$stmt->execute()) {
+            error_log("SQL Execution Error: " . $stmt->error);
+            return jsonResponse(500, ['message' => 'Database error executing statement']);
+        }
+
+        $userResult = $stmt->get_result();
         if ($userResult->num_rows === 0) {
             return jsonResponse(400, ['message' => 'User not found']);
         }
 
-        $user = $userResult->fetch_assoc();
-        $expoPushToken = $user['expoPushToken'];
-
-        // Insert payment details
-        $stmt = $conn->prepare("
-            INSERT INTO user_payment (userId, email, dollar_amount, rate, amount, payment_type, paymentStatus, 
-            paymentDuration, paymentDate, phoneNumber, transactionId, fullname, createdBy, updatedBy, 
-            paymentMethod, transactionReference, currency)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ");
-        $stmt->bind_param("issddssssssssssss", $userId, $sanitizedEmail, $dollar_amount, $rate, $amount, 
-                          $payment_type, $paymentStatus, $paymentDuration, $paymentDate, $phoneNumber, 
-                          $transactionId, $fullname, $createdBy, $updatedBy, $paymentMethod, $transactionReference, $currency);
-
-        if (!$stmt->execute()) {
-            return jsonResponse(500, ['message' => 'Error creating payment', 'error' => $stmt->error]);
-        }
-
-        $paymentId = $stmt->insert_id;
-
-        // Update user membership/tutorship details if needed
-        if ($payment_type === 'Membership Payment') {
-            $updateUserQuery = "UPDATE users SET membershipPayment = ?, membershipPaymentAmount = ?, 
-                                membershipPaymentDate = ?, membershipPaymentDuration = ? WHERE id = ?";
-        } elseif ($payment_type === 'Tutorship Payment') {
-            $updateUserQuery = "UPDATE users SET tutorshipPayment = ?, tutorshipPaymentAmount = ?, 
-                                tutorshipPaymentDate = ?, tutorshipPaymentDuration = ? WHERE id = ?";
-        } else {
-            return processPaymentCompletion($conn, $data, $paymentId, $expoPushToken, $paymentDate);
-        }
-
-        $stmt = $conn->prepare($updateUserQuery);
-        $stmt->bind_param("ssssi", $paymentStatus, $amount, $paymentDate, $paymentDuration, $userId);
-
-        if (!$stmt->execute()) {
-            return jsonResponse(500, ['message' => 'Error updating user details', 'error' => $stmt->error]);
-        }
-
-        return processPaymentCompletion($conn, $data, $paymentId, $expoPushToken, $paymentDate);
+        // Rest of the code...
 
     } catch (Exception $e) {
-        return jsonResponse(500, ['message' => 'Server error', 'error' => $e->getMessage()]);
+        error_log("Exception Error: " . $e->getMessage());
+        return jsonResponse(500, ['message' => 'Server error occurred', 'error' => $e->getMessage()]);
     }
 }
+
+
 
 function processPaymentCompletion($conn, $data, $paymentId, $expoPushToken, $paymentDate) {
     extract($data);
