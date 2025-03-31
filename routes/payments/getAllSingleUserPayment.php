@@ -25,8 +25,9 @@ if(!$userId){
 if (!is_numeric($userId)) {
     throw new Exception("Please enter a valid userId", 400);
 }
+
     
-if($loggedInUserRole !== 'Admin' && $loggedInUserId !== $userId){
+if($loggedInUserRole !== 'Admin' && $loggedInUserId !== intval($userId)){
     throw new Exception("Unathourized user!", 401);    
 }
 
@@ -68,7 +69,7 @@ echo json_encode([
     // error_log('Database: ' . $e->getMessage());
     echo json_encode([
         "status" => "Failed",
-        "message" => $e->getMessage()
+        "message" => $e->getMessage(),
     ]);
 }
 
