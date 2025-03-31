@@ -25,6 +25,7 @@ $groupName = trim($data['groupName']);
 $userEmail = trim(strtolower($data['userEmail']));
 $createdBy = $userEmail;
 $updatedBy = $userEmail;
+$gameStatus = "Unplayed";
 
 $emailValidator = v::email();
 
@@ -63,14 +64,14 @@ if($num > 0){
 }
 
 
-$insertGameQuery = "INSERT INTO games (groupName, createdBy, updatedBy) VALUES (?, ?, ?)";
+$insertGameQuery = "INSERT INTO games (groupName, createdBy, updatedBy, gameStatus) VALUES (?, ?, ?, ?)";
 $insertstmt = $conn->prepare($insertGameQuery);
 
 if(!$insertstmt){
     throw new Exception("Database Preparation Error" . $conn->error, 500);
 }
 
-$insertstmt->bind_param("sss", $groupName, $createdBy, $updatedBy);
+$insertstmt->bind_param("ssss", $groupName, $createdBy, $updatedBy, $gameStatus);
 $insert = $insertstmt->execute();
 
 
@@ -78,6 +79,7 @@ if($insert){
     $gameData = [
             "gameId" => $insertstmt->insert_id, 
             "groupName" => $groupName, 
+            "gameStatus" => $gameStatus, 
             "createdBy" => $createdBy,
             "updatedBy" => $updatedBy, 
         ];

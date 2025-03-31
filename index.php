@@ -91,6 +91,7 @@ $dynamicRoutes = [
     '/users/getSingleUser/(.+)' => 'routes/users/getSingleUser.php',
     '/notifications/getNotifications/(.+)' => 'routes/notifications/getNotifications.php',
     '/payment/getSinglePayment/(.+)' => 'routes/payments/getSinglePayment.php',
+    '/payment/getAllSingleUserPayments/(.+)' => 'routes/payments/getAllSingleUserPayment.php',
     '/game/getUserPairing/(.+)' => 'routes/games/getUserPairing.php',
     '/game/deleteGame/(.+)' => 'routes/games/deleteGame.php',
 ];
