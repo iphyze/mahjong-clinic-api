@@ -14,6 +14,7 @@ if(!$req){
 
 $userData = authenticateUser();
 $loggedInUserRole = $userData['role'];
+$loggedInUserEmail = $userData['email'];
 
 if($loggedInUserRole != 'Admin'){
     throw new Exception("Access Denied, unauthorized user!", 401);
@@ -22,21 +23,22 @@ if($loggedInUserRole != 'Admin'){
 $data = json_decode(file_get_contents("php://input"), true);
 
 $groupName = trim($data['groupName']);
-$userEmail = trim(strtolower($data['userEmail']));
-$createdBy = $userEmail;
-$updatedBy = $userEmail;
+// $userEmail = trim(strtolower($data['userEmail']));
+$userEmail = $loggedInUserEmail;
+$createdBy = $loggedInUserEmail;
+$updatedBy = $loggedInUserEmail;
 $gameStatus = "Unplayed";
 
 $emailValidator = v::email();
 
 
-if(empty($userEmail)){
-    throw new Exception("User Email is required!", 400);
-}
+// if(empty($userEmail)){
+//     throw new Exception("User Email is required!", 400);
+// }
 
-if(!$emailValidator->validate($userEmail)){
-    throw new Exception("Invalid email format", 400);
-}
+// if(!$emailValidator->validate($userEmail)){
+//     throw new Exception("Invalid email format", 400);
+// }
 
 if(empty($groupName)){
     throw new Exception("Group Name is required!", 400);
