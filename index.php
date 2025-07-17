@@ -72,9 +72,11 @@ $routes = [
     '/game/addUserToGame' => 'routes/games/addUserToGame.php',
     '/game/getAllGamesWithPlayers' => 'routes/games/getAllGamesWithPlayers.php',
     '/game/getAllGames' => 'routes/games/getAllGames.php',
+    '/game/getSingleGameUsers' => 'routes/games/getSingleGameUsers.php',
     '/game/updateGame' => 'routes/games/updateGame.php',
     '/game/getAllPairs' => 'routes/games/getAllPairs.php',
     '/game/deletePairs' => 'routes/games/deletePairs.php',
+    '/game/deleteGames' => 'routes/games/deleteGames.php',
 ];
 
 
@@ -93,7 +95,6 @@ $dynamicRoutes = [
     '/payment/getSinglePayment/(.+)' => 'routes/payments/getSinglePayment.php',
     '/payment/getAllSingleUserPayments/(.+)' => 'routes/payments/getAllSingleUserPayment.php',
     '/game/getUserPairing/(.+)' => 'routes/games/getUserPairing.php',
-    '/game/deleteGame/(.+)' => 'routes/games/deleteGame.php',
 ];
 
 
