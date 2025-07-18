@@ -70,14 +70,10 @@ try {
             throw new Exception("File upload failed.");
         }
 
-        // Store file name (you can also use full URL if needed)
+        // Store image URL for database update
+        $imageUrl = "https://mahjong-db.goldenrootscollectionsltd.com/imageUploads/mahjong-uploads/" . $uniqueFileName;
+        // $updateData['image'] = $imageUrl;
         $updateData['image'] = $uniqueFileName;
-
-        // Update image in pairs table too
-        $stmtPairs = $conn->prepare("UPDATE pairs SET image = ? WHERE userId = ?");
-        $stmtPairs->bind_param("si", $uniqueFileName, $userId);
-        $stmtPairs->execute();
-        $stmtPairs->close();
     }
 
     // Process text updates
