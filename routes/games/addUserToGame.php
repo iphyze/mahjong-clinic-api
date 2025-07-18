@@ -13,6 +13,7 @@ try {
     // Authenticate user
     $userData = authenticateUser();
     $loggedInUserRole = $userData['role'];
+    $loggedInUserEmail = $userData['email'];
 
     if ($loggedInUserRole !== 'Admin') {
         throw new Exception("Access Denied, unauthorized user!", 401);
@@ -21,15 +22,15 @@ try {
     // Get input data
     $data = json_decode(file_get_contents("php://input"), true);
 
-    if (!isset($data['gameId'], $data['groupName'], $data['users'], $data['createdBy'], $data['updatedBy'])) {
+    if (!isset($data['gameId'], $data['groupName'], $data['users'])) {
         throw new Exception("Missing required fields!", 400);
     }
 
     $gameId = $data['gameId'];
     $groupName = trim($data['groupName']);
     $users = $data['users']; // Array of user objects with userId
-    $createdBy = trim(strtolower($data['createdBy']));
-    $updatedBy = trim(strtolower($data['updatedBy']));
+    $createdBy = $loggedInUserEmail;
+    $updatedBy = $loggedInUserEmail;
 
     if (!is_array($users) || count($users) === 0) {
         throw new Exception("Users list must be a non-empty array.", 400);
