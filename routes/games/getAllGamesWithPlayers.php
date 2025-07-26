@@ -46,7 +46,7 @@ try {
 
     $placeholders = implode(',', array_fill(0, count($gameIds), '?'));
     $playersQuery = "
-        SELECT p.gameId, p.dataId, u.id AS userId, u.userName, u.image, u.skillLevel
+        SELECT p.gameId, p.dataId, u.id AS userId, u.firstName, u.lastName, u.email, u.userName, u.image, u.skillLevel
         FROM pairs p
         JOIN users u ON p.userId = u.id
         WHERE p.gameId IN ($placeholders)
@@ -77,6 +77,9 @@ try {
                 return [
                     "userId" => $player['userId'],
                     "dataId" => $player['dataId'],
+                    "userName" => $player['userName'],
+                    "fullName" => $player['firstName'] . " " . $player['lastName'],
+                    "email" => $player['email'],
                     "userName" => $player['userName'],
                     "image" => $player['image'] ?? null,
                     "skillLevel" => $player['skillLevel'] ?? "Not specified"

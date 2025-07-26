@@ -60,7 +60,7 @@ try {
 
     $placeholders = implode(',', array_fill(0, count($gameIds), '?'));
     $pairMembersQuery = "
-        SELECT p.gameId, p.dataId, u.image, u.userName, u.id AS userId
+        SELECT p.gameId, p.dataId, u.image, u.userName, u.firstName, u.lastName, u.email, u.id AS userId
         FROM pairs p
         JOIN users u ON p.userId = u.id
         WHERE p.gameId IN ($placeholders)
