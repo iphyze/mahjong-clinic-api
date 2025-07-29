@@ -15,7 +15,7 @@ try {
     $loggedInUserRole = $userData['role'];
 
     // Check for Admin role
-    if ($loggedInUserRole !== "Admin" && $loggedInUserRole !== "Super_Admin") {
+    if ($loggedInUserRole !== "Super_Admin") {
         throw new Exception("Unauthorized, Access denied!", 403);
     }
 
@@ -36,18 +36,18 @@ try {
     }
 
     // Prepare WHERE clause for search
-    $whereConditions = ["role = 'User'"];
+    $whereConditions = ["role != 'User'"];
     $params = [];
     $types = "";
 
     if (!empty($search)) {
-    $whereConditions[] = "(firstName LIKE ? OR lastName LIKE ? OR email LIKE ?)";
-    $searchTerm = "%" . $search . "%";
-    $params = [$searchTerm, $searchTerm, $searchTerm];
-    $types = "sss";
-}
+        $whereConditions[] = "(firstName LIKE ? OR lastName LIKE ? OR email LIKE ?)";
+        $searchTerm = "%" . $search . "%";
+        $params = [$searchTerm, $searchTerm, $searchTerm];
+        $types = "sss";
+    }
 
-$whereClause = "WHERE " . implode(" AND ", $whereConditions);
+    $whereClause = "WHERE " . implode(" AND ", $whereConditions);
 
     // Total count query
     $totalQuery = "SELECT COUNT(*) AS total FROM users $whereClause";

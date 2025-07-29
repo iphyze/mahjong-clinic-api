@@ -62,7 +62,7 @@ $data = json_decode(file_get_contents("php://input"), true);
 // $usersId = trim($data['userId']);
 
 
-if ($loggedInUserRole !== "Admin" && intval($data['userId']) !== $loggedInUserId) {
+if ($loggedInUserRole !== "Admin" && $loggedInUserRole !== "Super_Admin" && intval($data['userId']) !== $loggedInUserId) {
     http_response_code(403);
     echo json_encode(["status" => "Failed", "message" => "Access denied. You can only update your own push token."]);
     exit;

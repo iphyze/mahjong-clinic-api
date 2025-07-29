@@ -17,7 +17,7 @@ $userData = authenticateUser();
 $loggedInUserRole = $userData['role'];
 
 // Ensure the user is an Admin
-if ($loggedInUserRole !== "Admin") {
+if ($loggedInUserRole !== "Admin" && $loggedInUserRole !== "Super_Admin") {
     http_response_code(403);
     echo json_encode(["message" => "Access denied. Unauthorized user"]);
     exit;

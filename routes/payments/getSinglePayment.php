@@ -26,7 +26,7 @@ if (!is_numeric($paymentId)) {
     throw new Exception("Please enter a valid payment ID", 400);
 }
     
-if($loggedInUserRole !== 'Admin'){
+if($loggedInUserRole !== 'Admin' && $loggedInUserRole !== "Super_Admin"){
     throw new Exception("Unathourized user!", 401);    
 }
 

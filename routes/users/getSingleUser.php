@@ -37,7 +37,7 @@ $loggedInUserId = intval($userData['id']);
 $loggedInUserRole = $userData['role'];
 
 // Prevent unauthorized access
-if ($loggedInUserRole !== "Admin" && $userId !== $loggedInUserId) {
+if ($loggedInUserRole !== "Admin" && $loggedInUserRole !== "Super_Admin" && $userId !== $loggedInUserId) {
     http_response_code(403);
     echo json_encode(["message" => "Access denied. You can only view your own details."]);
     exit;

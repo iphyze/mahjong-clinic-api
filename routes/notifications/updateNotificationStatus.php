@@ -36,13 +36,13 @@ if (!isset($data['notificationId']) || !is_numeric($data['notificationId']) || i
 
 // Convert to integer
 // $userId = intval($data['userId']);
-// $notificationId = intval($data['notificationId']);
 
 $userId = intval(trim($data['userId']));
-$expoPushToken = intval(trim($data['expoPushToken']));
+$notificationId = intval($data['notificationId']);
+// $expoPushToken = intval(trim($data['expoPushToken']));
 
 // Prevent unauthorized access
-if ($loggedInUserRole !== "Admin" && $userId !== $loggedInUserId) {
+if ($loggedInUserRole !== "Admin" && $loggedInUserRole !== "Super_Admin" && $userId !== $loggedInUserId) {
     http_response_code(403);
     echo json_encode(["message" => "Access denied. You can only view your own details."]);
     exit;

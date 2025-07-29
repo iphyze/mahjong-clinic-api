@@ -16,7 +16,7 @@ $userData = authenticateUser();
 $loggedInUserRole = $userData['role'];
 $loggedInUserEmail = $userData['email'];
 
-if($loggedInUserRole != 'Admin'){
+if($loggedInUserRole != 'Admin' && $loggedInUserRole !== "Super_Admin"){
     throw new Exception("Access Denied, unauthorized user!", 401);
 }
 

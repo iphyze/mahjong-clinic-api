@@ -27,7 +27,7 @@ if (!is_numeric($userId)) {
 }
 
     
-if($loggedInUserRole !== 'Admin' && $loggedInUserId !== intval($userId)){
+if($loggedInUserRole !== 'Admin' && $loggedInUserRole !== "Super_Admin" && $loggedInUserId !== intval($userId)){
     throw new Exception("Unathourized user!", 401);    
 }
 

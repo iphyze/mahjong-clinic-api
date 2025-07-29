@@ -10,6 +10,13 @@ require_once 'includes/authMiddleware.php';
 header("Content-Type: application/json");
 
 $userData = authenticateUser();  // This will stop execution if unauthorized
+$loggedInUserRole = $userData['role'];
+
+// Check for Admin role
+if ($loggedInUserRole !== "Admin" && $loggedInUserRole !== "Super_Admin") {
+    throw new Exception("Unauthorized, Access denied!", 403);
+}
+
 
 
 if ($_SERVER['REQUEST_METHOD'] !== 'PUT') {
@@ -47,6 +54,7 @@ $lastName = $input['lastName'] ?? null;
 $email = $input['email'] ?? null;
 $country_code = $input['country_code'] ?? null;
 $number = $input['number'] ?? null;
+$skillLevel = $input['skillLevel'] ?? null;
 
 
 
@@ -116,6 +124,10 @@ if ($number) {
     $updateFields[] = "number = ?";
     $updateValues[] = $number;
 }
+if ($skillLevel) {
+    $updateFields[] = "skillLevel = ?";
+    $updateValues[] = $skillLevel;
+}
 
 
 // Ensure there are fields to update
@@ -135,21 +147,22 @@ if (count($updateFields) > 0) {
 
         http_response_code(200);
         echo json_encode([
+            "status" => "Success",
             "message" => "User details updated successfully",
             "data" => $user
         ]);
     } else {
         http_response_code(500);
-        echo json_encode(["message" => "Database error", "error" => $stmt->error]);
+        echo json_encode(["status" => "Failed", "message" => "Database error", "error" => $stmt->error]);
     }
 } else {
     http_response_code(400);
-    echo json_encode(["message" => "No valid fields provided for update"]);
+    echo json_encode(["status" => "Failed", "message" => "No valid fields provided for update"]);
 }
 
 
 $stmt->close();
-$updateStmt->close();
+// $updateStmt->close();
 $conn->close();
 
 

@@ -32,12 +32,14 @@ if (!isset($data['firstName'], $data['lastName'], $data['email'], $data['passwor
     exit;
 }
 
-$firstName = trim($data['firstName']);
-$lastName = trim($data['lastName']);
-$email = trim(strtolower($data['email']));
-$password = trim($data['password']);
-$country_code = trim($data['country_code']);
-$number = trim($data['number']);
+$firstName = trim($data['firstName']) ?? null;
+$lastName = trim($data['lastName']) ?? null;
+$email = trim(strtolower($data['email'])) ?? null;
+$password = trim($data['password']) ?? null;
+$country_code = trim($data['country_code']) ?? null;
+$number = trim($data['number']) ?? null;
+$skillLevel = trim($data['skillLevel']) ?? "Beginner";
+$role = trim($data['role']) ?? "User";
 
 
 // Validation
@@ -60,7 +62,6 @@ $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 $timestamp = date('Y-m-d H:i:s');
 $emailCode = rand(1000, 9999);
 $expiresAt = date('Y-m-d H:i:s', strtotime('+2 hours'));
-$role = 'User';
 
 // Generate unique username
 list($baseName, $domain) = explode('@', $email);
@@ -80,11 +81,11 @@ if ($result->num_rows > 0) {
 
 
 // Insert new user
-$stmt = $conn->prepare("INSERT INTO users (firstName, lastName, email, userName, password, country_code, number, role, isEmailVerified, emailCode, expiresAt, createdBy, updatedBy, createdAt, updatedAt) 
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?)");
+$stmt = $conn->prepare("INSERT INTO users (firstName, lastName, email, userName, password, country_code, number, role, isEmailVerified, emailCode, expiresAt, createdBy, updatedBy, createdAt, updatedAt, skillLevel) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?)");
 
 // Make sure the number of placeholders matches the number of bind parameters
-$stmt->bind_param("ssssssssssssss", $firstName, $lastName, $email, $userName, $hashedPassword, $country_code, $number, $role, $emailCode, $expiresAt, $email, $email, $timestamp, $timestamp);
+$stmt->bind_param("sssssssssssssss", $firstName, $lastName, $email, $userName, $hashedPassword, $country_code, $number, $role, $emailCode, $expiresAt, $email, $email, $timestamp, $timestamp, $skillLevel);
 
 
 if (!$stmt) {
@@ -120,6 +121,7 @@ if ($stmt->execute()) {
     
         http_response_code(200);
         echo json_encode([
+        "status" => "Success",
         "message" => $emailSent && $smsSent
             ? "User registration was successful. Kindly verify your email!"
             : "User registration was successful, however we were not able to verify your email!",
@@ -129,6 +131,7 @@ if ($stmt->execute()) {
             "lastName" => $lastName,
             "email" => $email,
             "userName" => $userName,
+            "skillLevel" => $skillLevel,
             "isEmailVerified" => false,
             "emailVerification" => [
                 "emailCode" => $emailCode,

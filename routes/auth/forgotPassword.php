@@ -59,8 +59,20 @@ if ($result->num_rows === 0) {
 
 $user = $result->fetch_assoc();
 
-// Generate a new password
-$newPassword = substr(bin2hex(random_bytes(8)), 0, 7) . "!1"; // 8 random characters + !1
+
+
+$uppercase = chr(rand(65, 90)); // A-Z
+$special = '!@#$%^&*()_+-=[]{}|;:,.<>?';
+$specialChar = $special[rand(0, strlen($special) - 1)];
+$number = rand(0, 9);
+
+// Random remaining characters (lowercase and/or mixed)
+$randomPart = substr(bin2hex(random_bytes(4)), 0, 8);
+
+// Shuffle to mix positions
+$prePassword = $uppercase . $specialChar . $number . $randomPart;
+$newPassword = str_shuffle($prePassword);
+
 
 // Hash the password
 $hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT);
@@ -74,14 +86,14 @@ if ($updateStmt->execute()) {
     // Send email with new password
     if (sendPasswordResetEmail($email, $newPassword, $user['firstName'])) {
         http_response_code(200);
-        echo json_encode(["message" => "A new password has been sent to your email address."]);
+        echo json_encode(["status" => "Success", "message" => "A new password has been sent to the email address you provided."]);
     } else {
         http_response_code(200);
-        echo json_encode(["message" => "Error sending email, but password was updated."]);
+        echo json_encode(["status" => "Success", "message" => "Password was updated successfully however, an error occured while sending email."]);
     }
 } else {
     http_response_code(500);
-    echo json_encode(["message" => "Database error while updating password.", "error" => $updateStmt->error]);
+    echo json_encode(["status" => "Error", "message" => "Database error while updating password.", "error" => $updateStmt->error]);
 }
 
 $stmt->close();

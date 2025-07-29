@@ -21,6 +21,12 @@ header("Content-Type: application/json");
 
 
 $userData = authenticateUser();  // This will stop execution if unauthorized
+$loggedInUserId = intval($userData['id']);
+$loggedInUserRole = $userData['role'];
+
+// if ($loggedInUserRole !== "Admin" && $loggedInUserRole !== "Super_Admin" && $userId !== $loggedInUserId) {
+//     throw new Exception("Access denied. You can only update your own profile.");
+// }
 
 
 function sendPasswordUpdateEmail($to, $firstName) {
@@ -51,7 +57,7 @@ function sendPasswordUpdateEmail($to, $firstName) {
 
 if ($_SERVER['REQUEST_METHOD'] !== 'PUT') {
     http_response_code(400);
-    echo json_encode(["message" => "Bad Request"]);
+    echo json_encode(["status" => "Failed", "message" => "Bad Request"]);
     exit;
 }
 
@@ -70,7 +76,7 @@ $userIdFromToken = $userData['id'] ?? null;
 
 if(!$id){
     http_response_code(400);
-    echo json_encode(["message" => "User's ID is required"]);
+    echo json_encode(["status" => "Failed", "message" => "User's ID is required"]);
     exit;
 }
 
@@ -78,7 +84,7 @@ if(!$id){
 // Ensure the user can only update their own password
 if ($id !== $userIdFromToken) {
     http_response_code(403);
-    echo json_encode(["message" => "Forbidden: You can only update your own password!"]);
+    echo json_encode(["status" => "Failed", "message" => "Forbidden: You can only update your own password!"]);
     exit;
 }
 
@@ -88,27 +94,27 @@ $passwordValidator = v::stringType()->length(6, null);
 // Validate ID
 if (!v::intVal()->validate($id)) {
     http_response_code(400);
-    echo json_encode(["message" => "Invalid user ID"]);
+    echo json_encode(["status" => "Failed", "message" => "Invalid user ID"]);
     exit;
 }
 
 
 if (!$passwordValidator->validate($currentPassword)) {
     http_response_code(400);
-    echo json_encode(["message" => "Password must be at least 6 characters long"]);
+    echo json_encode(["status" => "Failed", "message" => "Password must be at least 6 characters long"]);
     exit;
 }
 
 if (!$passwordValidator->validate($newPassword)) {
     http_response_code(400);
-    echo json_encode(["message" => "New Password must be at least 6 characters long"]);
+    echo json_encode(["status" => "Failed", "message" => "New Password must be at least 6 characters long"]);
     exit;
 }
 
 
 if (!$currentPassword || !$newPassword) {
     http_response_code(400);
-    echo json_encode(["message" => "All fields are required"]);
+    echo json_encode(["status" => "Failed", "message" => "All fields are required"]);
     exit;
 }
 
@@ -119,7 +125,7 @@ $query = "SELECT * FROM users WHERE id = ?"; $stmt = $conn->prepare($query);
 
     if ($result->num_rows === 0) {
         http_response_code(404);
-        echo json_encode(["message" => "User not found"]);
+        echo json_encode(["status" => "Failed", "message" => "User not found"]);
         exit;
     }
 
@@ -127,7 +133,7 @@ $query = "SELECT * FROM users WHERE id = ?"; $stmt = $conn->prepare($query);
     
     if (!password_verify($currentPassword, $user['password'])) {
         http_response_code(400);
-        echo json_encode(["message" => "Current password is incorrect"]);
+        echo json_encode(["status" => "Failed", "message" => "Current password is incorrect"]);
         exit;
     }
 
@@ -138,10 +144,12 @@ $query = "SELECT * FROM users WHERE id = ?"; $stmt = $conn->prepare($query);
     $updateStmt->bind_param("si", $hashedPassword, $id);
 
     if ($updateStmt->execute()) {
+        http_response_code(200);
         sendPasswordUpdateEmail($user['email'], $user['firstName']);
-        echo json_encode(["message" => "Password updated successfully. A notification has been sent to your email."]);
+        echo json_encode(["status" => "Success", "message" => "Password updated successfully. A notification has been sent to your email."]);
     } else {
-        echo json_encode(["message" => "Database error while updating password"]);
+        http_response_code(501);
+        echo json_encode(["status" => "Failed", "message" => "Database error while updating password"]);
     }
 
 

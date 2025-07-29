@@ -15,7 +15,7 @@ try {
     $userData = authenticateUser();
     $loggedInUserRole = $userData['role'];
 
-    if ($loggedInUserRole !== 'Admin') {
+    if ($loggedInUserRole !== 'Admin' && $loggedInUserRole !== "Super_Admin") {
         throw new Exception("Unauthorized: Only Admins can access games", 401);
     }
 

@@ -23,7 +23,7 @@ try {
     $userId = intval($_GET['params']);
 
     // Prevent access if the logged-in user is not the owner of the data
-    if ($loggedInUserRole !== 'Admin' && $userId !== $loggedInUserId) {
+    if ($loggedInUserRole !== 'Admin' && $loggedInUserRole !== "Super_Admin" && $userId !== $loggedInUserId) {
         throw new Exception("Access denied. You can only view your own pairings.", 403);
     }
 
