@@ -79,6 +79,8 @@ $routes = [
     '/game/getAllPairs' => 'routes/games/getAllPairs.php',
     '/game/deletePairs' => 'routes/games/deletePairs.php',
     '/game/deleteGames' => 'routes/games/deleteGames.php',
+    '/reports/paymentReport' => 'routes/reports/paymentReport.php',
+    '/reports/usersReport' => 'routes/reports/usersReport.php',
 ];
 
 
