@@ -98,7 +98,8 @@ try {
             "page" => $page,
             // Optional: include sort metadata for frontend use
             "sortBy" => $sortBy,
-            "sortOrder" => $sortOrder
+            "sortOrder" => $sortOrder,
+            "search" => $search
         ]
     ]);
 } catch (Exception $e) {

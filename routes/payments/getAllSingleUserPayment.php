@@ -1,79 +1,109 @@
-<?php
+<?php 
 require_once 'includes/connection.php';
 require_once 'includes/authMiddleware.php';
 
 header('Content-Type: application/json');
 
-try{
+try {
+    if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+        throw new Exception("Bad Request, route wasn't found!", 404);
+    }
 
-$req = $_SERVER['REQUEST_METHOD'];
+    $userData = authenticateUser();
+    $loggedInUserId = $userData['id'];
+    $loggedInUserRole = $userData['role'];
 
-if($req !== 'GET'){
-    throw new Exception("Bad Request, route wasn't found!", 404);
-}
+    // Query parameters
+    $limit = isset($_GET['limit']) ? (int) $_GET['limit'] : 10;
+    $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
+    $offset = ($page - 1) * $limit;
 
-$userData =  authenticateUser();
-$loggedInUserId = $userData['id'];
-$loggedInUserRole = $userData['role'];
-$userId = $_GET['params'];
+    $sortBy = isset($_GET['sortBy']) ? $_GET['sortBy'] : 'paymentDate';
+    $sortOrder = (isset($_GET['sortOrder']) && strtolower($_GET['sortOrder']) === 'asc') ? 'ASC' : 'DESC';
+    $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+    $userIdParam = isset($_GET['userId']) ? (int) $_GET['userId'] : null;
 
+    // Base query and filters
+    $whereClause = "WHERE 1=1";
+    $params = [];
+    $types = "";
 
-if(!$userId){
-    throw new Exception("UserId is required!", 400);
-}
-
-if (!is_numeric($userId)) {
-    throw new Exception("Please enter a valid userId", 400);
-}
-
-    
-if($loggedInUserRole !== 'Admin' && $loggedInUserRole !== "Super_Admin" && $loggedInUserId !== intval($userId)){
-    throw new Exception("Unathourized user!", 401);    
-}
-
-$query = 'SELECT * FROM user_payment WHERE userId = ? ORDER BY paymentDate DESC';
-$stmt = $conn->prepare($query);
-
-if (!$stmt) {
-    throw new Exception("Database query preparation failed: " . $conn->error, 500);
-}
-
-$stmt->bind_param("i", $userId);
-$stmt->execute();
-$result = $stmt->get_result();
-$num = $result->num_rows;
-
-
-if(!$result){
-    throw new Exception("Database execution error: " . $stmt->error, 500);
-}
+    // Apply role-based filtering
+    if ($loggedInUserRole === 'Admin' || $loggedInUserRole === 'Super_Admin') {
+        if ($userIdParam) {
+            $whereClause .= " AND userId = ?";
+            $params[] = $userIdParam;
+            $types .= "i";
+        }
+    } else {
+        // Non-admins can only view their own data
+        $whereClause .= " AND userId = ?";
+        $params[] = $loggedInUserId;
+        $types .= "i";
+    }
 
 
-if($num === 0){
-    throw new Exception("User wasn't found!", 404);
-}
+    if (!($loggedInUserRole === 'Admin' || $loggedInUserRole === 'Super_Admin') && $userIdParam !== null && $userIdParam !== $loggedInUserId) {
+        throw new Exception("Unauthorized access to another user's records", 403);
+    }
 
 
-$payment = $result->fetch_all(MYSQLI_ASSOC);
 
-http_response_code(200);
-echo json_encode([
-    "status" => "Success",
-    "message" => "Successfully fetched user payments!",
-    "data" => $payment
-]);
+    // Search filter
+    if (!empty($search)) {
+        $whereClause .= " AND (fullname LIKE ? OR email LIKE ? OR phoneNumber LIKE ?)";
+        $searchTerm = '%' . $search . '%';
+        $params = array_merge($params, [$searchTerm, $searchTerm, $searchTerm]);
+        $types .= "sss";
+    }
 
+    // Get total count
+    $countQuery = "SELECT COUNT(*) AS total FROM user_payment $whereClause";
+    $countStmt = $conn->prepare($countQuery);
+    if (!$countStmt) throw new Exception("Count query preparation failed: " . $conn->error);
 
-}catch(Exception $e){
+    if (!empty($params)) $countStmt->bind_param($types, ...$params);
+    $countStmt->execute();
+    $countResult = $countStmt->get_result();
+    $total = $countResult->fetch_assoc()['total'] ?? 0;
+
+    // Main data query
+    $query = "SELECT * FROM user_payment $whereClause ORDER BY $sortBy $sortOrder LIMIT ? OFFSET ?";
+    $stmt = $conn->prepare($query);
+    if (!$stmt) throw new Exception("Main query preparation failed: " . $conn->error);
+
+    $types .= "ii";
+    $params[] = $limit;
+    $params[] = $offset;
+    $stmt->bind_param($types, ...$params);
+
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    $payments = [];
+    while ($row = $result->fetch_assoc()) {
+        $payments[] = $row;
+    }
+
+    http_response_code(200);
+    echo json_encode([
+        "status" => "Success",
+        "message" => "Successfully fetched payments",
+        "data" => $payments,
+        "meta" => [
+            "total" => $total,
+            "limit" => $limit,
+            "page" => $page,
+            "sortBy" => $sortBy,
+            "sortOrder" => $sortOrder,
+            // "search" => $search,
+        ]
+    ]);
+
+} catch (Exception $e) {
     http_response_code($e->getCode() ?: 500);
-    // error_log('Database: ' . $e->getMessage());
     echo json_encode([
         "status" => "Failed",
-        "message" => $e->getMessage(),
+        "message" => $e->getMessage()
     ]);
 }
-
-
-
-
-?>

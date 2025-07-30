@@ -66,10 +66,12 @@ $routes = [
     '/users/updateUser' => 'routes/users/updateUser.php',
     '/users/updatePassword' => 'routes/users/updatePassword.php',
     '/notifications/sendNotification' => 'routes/notifications/sendNotification.php',
+    '/notifications/getNotifications' => 'routes/notifications/getNotifications.php',
     '/notifications/notificationStatus' => 'routes/notifications/updateNotificationStatus.php',
     '/notifications/updatePushToken' => 'routes/notifications/updatePushToken.php',
     '/payment/createPayment' => 'routes/payments/createPayment.php',
     '/payment/getAllPayments' => 'routes/payments/getAllPayments.php',
+    '/payment/getAllSingleUserPayments' => 'routes/payments/getAllSingleUserPayment.php',
     '/game/createGame' => 'routes/games/createGame.php',
     '/game/addUserToGame' => 'routes/games/addUserToGame.php',
     '/game/getAllGamesWithPlayers' => 'routes/games/getAllGamesWithPlayers.php',
@@ -95,9 +97,9 @@ if (array_key_exists($relativePath, $routes)) {
 
 $dynamicRoutes = [
     '/users/getSingleUser/(.+)' => 'routes/users/getSingleUser.php',
-    '/notifications/getNotifications/(.+)' => 'routes/notifications/getNotifications.php',
+    // '/notifications/getNotifications/(.+)' => 'routes/notifications/getNotifications.php',
     '/payment/getSinglePayment/(.+)' => 'routes/payments/getSinglePayment.php',
-    '/payment/getAllSingleUserPayments/(.+)' => 'routes/payments/getAllSingleUserPayment.php',
+    // '/payment/getAllSingleUserPayments/(.+)' => 'routes/payments/getAllSingleUserPayment.php',
     '/game/getUserPairing/(.+)' => 'routes/games/getUserPairing.php',
 ];
 
