@@ -2,140 +2,138 @@
 require_once 'includes/connection.php';
 require_once 'includes/authMiddleware.php';
 
-header('Content-Type: application/json');
+
+header("Content-Type: application/json");
 
 try {
-    // Ensure request method is GET
     if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
-        throw new Exception("Bad Request, route wasn't found!", 404);
+        throw new Exception("Bad Request", 400);
     }
 
-    // Authenticate user
     $userData = authenticateUser();
-    $loggedInUserId = $userData['id'];
     $loggedInUserRole = $userData['role'];
 
-    // Extract query params
-    $userId = isset($_GET['userId']) ? intval($_GET['userId']) : $loggedInUserId;
+    // Query parameters
+    $userId = isset($_GET['userId']) ? intval($_GET['userId']) : null;
     $limit = isset($_GET['limit']) ? intval($_GET['limit']) : 10;
     $page = isset($_GET['page']) ? intval($_GET['page']) : 1;
-    $search = isset($_GET['search']) ? trim($_GET['search']) : '';
-    $sortBy = isset($_GET['sortBy']) ? $_GET['sortBy'] : 'scheduleDate';
-    $sortOrder = (isset($_GET['sortOrder']) && strtolower($_GET['sortOrder']) === 'desc') ? 'DESC' : 'ASC';
+    $sortBy = $_GET['sortBy'] ?? 'groupName';
+    $sortOrder = strtoupper($_GET['sortOrder'] ?? 'DESC');
+    $search = $_GET['search'] ?? '';
 
     $offset = ($page - 1) * $limit;
 
-    // Restrict access for non-admins
-    if ($loggedInUserRole !== 'Admin' && $loggedInUserRole !== 'Super_Admin' && $userId !== $loggedInUserId) {
-        throw new Exception("Access denied. You can only view your own pairings.", 403);
+    $allowedSortFields = ['groupName', 'scheduleDate', 'gameStatus'];
+    if (!in_array($sortBy, $allowedSortFields)) {
+        $sortBy = 'groupName';
     }
+
+    $params = [];
+    $paramTypes = '';
+    $searchClause = '';
 
     // Build the base query
-    $searchClause = '';
-    $params = [$userId];
-    $paramTypes = 'i';
-
-    if (!empty($search)) {
-        $searchClause = "AND (g.groupName LIKE ? OR g.scheduleDate LIKE ? OR u.skillLevel LIKE ? OR g.gameStatus LIKE ?)";
-        $params[] = "%$search%";
-        $params[] = "%$search%";
-        $params[] = "%$search%";
-        $params[] = "%$search%";
-        $paramTypes .= 'ssss';
-    }
-
-
-    // Count total results
-    $countQuery = "
-        SELECT COUNT(*) as total
-        FROM games g
-        JOIN pairs p ON g.id = p.gameId
-        WHERE p.userId = ? $searchClause
-    ";
-
-    $stmt = $conn->prepare($countQuery);
-    $stmt->bind_param($paramTypes, ...$params);
-    $stmt->execute();
-    $countResult = $stmt->get_result();
-    $total = $countResult->fetch_assoc()['total'];
-
-    // Main query to fetch paginated results
-    $mainQuery = "
+    $query = "
         SELECT g.id, g.groupName, g.scheduleDate, g.gameStatus, u.image AS userImage, u.skillLevel
         FROM games g
         JOIN pairs p ON g.id = p.gameId
         JOIN users u ON p.userId = u.id
-        WHERE p.userId = ? $searchClause
-        ORDER BY $sortBy $sortOrder
-        LIMIT ? OFFSET ?
+        WHERE 1 = 1
     ";
 
+    // Apply userId filtering
+    if ($userId !== null && !in_array($loggedInUserRole, ['Admin', 'Super_Admin'])) {
+        $query .= " AND u.id = ? ";
+        $params[] = $userId;
+        $paramTypes .= 'i';
+    }
+
+    if ($userId !== null && in_array($loggedInUserRole, ['Admin', 'Super_Admin'])) {
+        $query .= " AND (? IS NULL OR u.id = ?) ";
+        $params[] = $userId;
+        $params[] = $userId;
+        $paramTypes .= 'ii';
+    }
+
+    // Search clause
+    if (!empty($search)) {
+        $query .= " AND (g.groupName LIKE ? OR g.scheduleDate LIKE ? OR u.skillLevel LIKE ? OR g.gameStatus LIKE ?) ";
+        $searchWildcard = "%$search%";
+        $params = array_merge($params, [$searchWildcard, $searchWildcard, $searchWildcard, $searchWildcard]);
+        $paramTypes .= 'ssss';
+    }
+
+    // Sorting and pagination
+    $query .= " ORDER BY g.$sortBy $sortOrder LIMIT ? OFFSET ? ";
     $params[] = $limit;
     $params[] = $offset;
     $paramTypes .= 'ii';
 
-    $stmt = $conn->prepare($mainQuery);
-    $stmt->bind_param($paramTypes, ...$params);
+    // Prepare and execute the statement
+    $stmt = $conn->prepare($query);
+    if (!empty($paramTypes)) {
+        $stmt->bind_param($paramTypes, ...$params);
+    }
     $stmt->execute();
-    $gamesResult = $stmt->get_result();
+    $result = $stmt->get_result();
 
-    if ($gamesResult->num_rows === 0) {
-        throw new Exception("No games found.", 404);
+    $data = [];
+    while ($row = $result->fetch_assoc()) {
+        $data[] = $row;
     }
 
-    $games = [];
-    while ($row = $gamesResult->fetch_assoc()) {
-        $games[] = $row;
-    }
-
-    $gameIds = array_column($games, 'id');
-    if (empty($gameIds)) {
-        throw new Exception("No paired members found for this user.", 404);
-    }
-
-    $placeholders = implode(',', array_fill(0, count($gameIds), '?'));
-    $pairQuery = "
-        SELECT p.gameId, p.dataId, u.image, u.userName, u.firstName, u.lastName, u.email, u.id AS userId
-        FROM pairs p
+    // Get total count for pagination
+    $countQuery = "
+        SELECT COUNT(*) AS total
+        FROM games g
+        JOIN pairs p ON g.id = p.gameId
         JOIN users u ON p.userId = u.id
-        WHERE p.gameId IN ($placeholders)
+        WHERE 1 = 1
     ";
-    $stmt = $conn->prepare($pairQuery);
-    $stmt->bind_param(str_repeat('i', count($gameIds)), ...$gameIds);
-    $stmt->execute();
-    $pairMembersResult = $stmt->get_result();
 
-    $pairMembers = [];
-    while ($row = $pairMembersResult->fetch_assoc()) {
-        $pairMembers[] = $row;
+    $countParams = [];
+    $countParamTypes = '';
+
+    if ($userId !== null && !in_array($loggedInUserRole, ['Admin', 'Super_Admin'])) {
+        $countQuery .= " AND u.id = ? ";
+        $countParams[] = $userId;
+        $countParamTypes .= 'i';
     }
 
-    $formattedData = array_map(function ($game) use ($pairMembers, $userId) {
-        return [
-            "id" => $game['id'],
-            "groupName" => $game['groupName'],
-            "userImage" => $game['userImage'] ?? null,
-            "skillLevel" => $game['skillLevel'] ?? "Not specified",
-            "scheduledDate" => $game['scheduleDate'],
-            "gameStatus" => $game['gameStatus'],
-            "pairMembersData" => array_values(array_filter($pairMembers, function ($member) use ($game, $userId) {
-                return $member['gameId'] === $game['id'] && $member['userId'] !== $userId;
-            }))
-        ];
-    }, $games);
+    if ($userId !== null && in_array($loggedInUserRole, ['Admin', 'Super_Admin'])) {
+        $countQuery .= " AND (? IS NULL OR u.id = ?) ";
+        $countParams[] = $userId;
+        $countParams[] = $userId;
+        $countParamTypes .= 'ii';
+    }
 
-    http_response_code(200);
+    if (!empty($search)) {
+        $countQuery .= " AND (g.groupName LIKE ? OR g.scheduleDate LIKE ? OR u.skillLevel LIKE ? OR g.gameStatus LIKE ?) ";
+        $searchWildcard = "%$search%";
+        $countParams = array_merge($countParams, [$searchWildcard, $searchWildcard, $searchWildcard, $searchWildcard]);
+        $countParamTypes .= 'ssss';
+    }
+
+    $countStmt = $conn->prepare($countQuery);
+    if (!empty($countParamTypes)) {
+        $countStmt->bind_param($countParamTypes, ...$countParams);
+    }
+    $countStmt->execute();
+    $countResult = $countStmt->get_result();
+    $total = $countResult->fetch_assoc()['total'];
+
     echo json_encode([
         "status" => "Success",
-        "message" => "Record fetched successfully!",
-        "data" => $formattedData,
+        "message" => "Fetched Successfully",
+        "data" => $data,
         "meta" => [
             "total" => $total,
             "limit" => $limit,
             "page" => $page,
             "sortBy" => $sortBy,
-            "sortOrder" => $sortOrder
-        ],
+            "sortOrder" => $sortOrder,
+            "search" => $search
+        ]
     ]);
 } catch (Exception $e) {
     http_response_code($e->getCode() ?: 500);
@@ -144,4 +142,3 @@ try {
         "message" => $e->getMessage()
     ]);
 }
-?>
