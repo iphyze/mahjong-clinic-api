@@ -36,13 +36,14 @@ try {
     $paramTypes = 'i';
 
     if (!empty($search)) {
-        $searchClause = "AND (g.groupName LIKE ? OR g.scheduleDate LIKE ? OR g.skillLevel LIKE ? OR g.gameStatus LIKE ?)";
+        $searchClause = "AND (g.groupName LIKE ? OR g.scheduleDate LIKE ? OR u.skillLevel LIKE ? OR g.gameStatus LIKE ?)";
         $params[] = "%$search%";
         $params[] = "%$search%";
         $params[] = "%$search%";
         $params[] = "%$search%";
         $paramTypes .= 'ssss';
     }
+
 
     // Count total results
     $countQuery = "
