@@ -60,6 +60,7 @@ $routes = [
     '/auth/verifyEmail' => 'routes/auth/verifyEmail.php',
     '/users/createAdminUser' => 'routes/users/createAdminUser.php',
     '/users/getAllUsers' => 'routes/users/getAllUsers.php',
+    '/users/getSubscribedUsers' => 'routes/users/getSubscribedUsers.php',
     '/users/getAllAdminUsers' => 'routes/users/getAllAdminUsers.php',
     '/users/deleteUsers' => 'routes/users/deleteUsers.php',
     '/users/updateUserData' => 'routes/users/updateUserData.php',
@@ -77,6 +78,7 @@ $routes = [
     '/game/getAllGamesWithPlayers' => 'routes/games/getAllGamesWithPlayers.php',
     '/game/getAllGames' => 'routes/games/getAllGames.php',
     '/game/getSingleGameUsers' => 'routes/games/getSingleGameUsers.php',
+    '/game/getUserPairing' => 'routes/games/getUserPairing.php',
     '/game/updateGame' => 'routes/games/updateGame.php',
     '/game/getAllPairs' => 'routes/games/getAllPairs.php',
     '/game/deletePairs' => 'routes/games/deletePairs.php',
@@ -100,7 +102,7 @@ $dynamicRoutes = [
     // '/notifications/getNotifications/(.+)' => 'routes/notifications/getNotifications.php',
     '/payment/getSinglePayment/(.+)' => 'routes/payments/getSinglePayment.php',
     // '/payment/getAllSingleUserPayments/(.+)' => 'routes/payments/getAllSingleUserPayment.php',
-    '/game/getUserPairing/(.+)' => 'routes/games/getUserPairing.php',
+    // '/game/getUserPairing/(.+)' => 'routes/games/getUserPairing.php',
 ];
 
 
